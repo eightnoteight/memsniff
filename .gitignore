@@ -1,5 +1,6 @@
 /.idea/
 /*.iml
 /memsniff
+vendor
 *.pcap
 *.pprof

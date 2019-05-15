@@ -5,6 +5,7 @@ package presentation
 import (
 	"fmt"
 	"github.com/box/memsniff/analysis"
+	"sync"
 	"time"
 )
 
@@ -63,7 +64,29 @@ func New(analysisPool *analysis.Pool, interval time.Duration, cumulative bool, s
 }
 
 func (u uiContext) Run() error {
-	return u.runTermbox()
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	exitChan := make(chan bool)
+	var errTermbox error
+	var errLogger error
+	go func() {
+		errTermbox = u.runTermbox()
+		wg.Done()
+		exitChan <- true
+	}()
+	go func() {
+		errLogger = u.runLogger(exitChan)
+		wg.Done()
+	}()
+	wg.Wait()
+	if errTermbox != nil {
+		return errTermbox
+	}
+	if errLogger != nil {
+		return errLogger
+	}
+	return nil
 }
 
 func (u uiContext) Log(items ...interface{}) {
